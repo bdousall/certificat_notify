@@ -6,19 +6,19 @@ use Google\Cloud\Firestore\FirestoreClient;
 $projectId = 'certificatcommune';
 $firestore = new FirestoreClient(['projectId' => $projectId]);
 
-// Log the raw input for debugging
+// Log pour debug
 $input = file_get_contents("php://input");
 file_put_contents("log.txt", "✅ Notification received:\n$input\n", FILE_APPEND);
 
 try {
     $data = json_decode($input, true);
-    
-    if (!$data || !isset($data['custom_data']['certificat_id'])) {
+
+    if (!$data || !isset($data['data']['custom_data']['certificat_id'])) {
         throw new Exception("Données de paiement invalides ou certificat_id manquant");
     }
 
-    $certificatId = $data['custom_data']['certificat_id'];
-    $status = $data['status']; // Vérifiez la structure exacte de la réponse PayDunya
+    $certificatId = $data['data']['custom_data']['certificat_id'];
+    $status = $data['data']['status'] ?? 'unknown';
 
     if ($status === 'completed') {
         $docRef = $firestore->collection('certificats')->document($certificatId);
