@@ -6,24 +6,26 @@ use Google\Cloud\Firestore\FirestoreClient;
 $projectId = 'certificatcommune';
 $firestore = new FirestoreClient(['projectId' => $projectId]);
 
-// Log pour debug
 $input = file_get_contents("php://input");
 file_put_contents("log.txt", "✅ Notification received:\n$input\n", FILE_APPEND);
 
 try {
-    $data = json_decode($input, true);
+    $payload = json_decode($input, true);
 
-    if (!$data || !isset($data['data']['custom_data']['certificat_id'])) {
+    if (
+        !$payload || 
+        !isset($payload['data']['custom_data']['certificat_id']) ||
+        !isset($payload['data']['status'])
+    ) {
         throw new Exception("Données de paiement invalides ou certificat_id manquant");
     }
 
-    $certificatId = $data['data']['custom_data']['certificat_id'];
-    $status = $data['data']['status'] ?? 'unknown';
+    $certificatId = $payload['data']['custom_data']['certificat_id'];
+    $status = $payload['data']['status'];
 
     if ($status === 'completed') {
         $docRef = $firestore->collection('certificats')->document($certificatId);
         $docRef->update([['path' => 'estPaye', 'value' => true]]);
-        
         file_put_contents("log.txt", "✅ Certificat $certificatId marqué comme payé\n", FILE_APPEND);
         echo "Paiement confirmé pour certificat: $certificatId";
     } else {
